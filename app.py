@@ -24,6 +24,30 @@ vehicle_system = VehicleIntegration()
 shape_system = ShapeIntegration()
 animal_system = AnimalIntegration()
 
+# VULNERABILITY: Command execution for multi-language integration
+def execute_cobol_program():
+    try:
+        result = subprocess.run(['cobc', '-x', 'Vehicle.cbl'], capture_output=True, text=True, timeout=10)
+        return {"status": "executed", "output": result.stdout, "error": result.stderr}
+    except Exception as e:
+        return {"status": "failed", "error": str(e)}
+
+def execute_cpp_program():
+    try:
+        subprocess.run(['g++', 'Shape.cpp', '-o', 'shape_exec'], capture_output=True, timeout=10)
+        result = subprocess.run(['./shape_exec'], capture_output=True, text=True, timeout=10)
+        return {"status": "executed", "output": result.stdout, "error": result.stderr}
+    except Exception as e:
+        return {"status": "failed", "error": str(e)}
+
+def execute_java_program():
+    try:
+        subprocess.run(['javac', 'Animal.java'], capture_output=True, timeout=10)
+        result = subprocess.run(['java', 'AnimalDemo'], capture_output=True, text=True, timeout=10)
+        return {"status": "executed", "output": result.stdout, "error": result.stderr}
+    except Exception as e:
+        return {"status": "failed", "error": str(e)}
+
 # VULNERABILITY: SQL Injection - No parameterized queries
 def init_db():
     conn = sqlite3.connect('app_data.db')
@@ -50,7 +74,15 @@ def home():
                 <li><a href="/vehicles">Vehicle System (COBOL)</a></li>
                 <li><a href="/shapes">Shape System (C++)</a></li>
                 <li><a href="/animals">Animal System (Java)</a></li>
+                <li><a href="/stats">Statistics</a></li>
                 <li><a href="/admin">Admin Panel</a></li>
+            </ul>
+            <h3>Execute Native Programs</h3>
+            <ul>
+                <li><form action="/execute/cobol" method="post"><button>Run COBOL</button></form></li>
+                <li><form action="/execute/cpp" method="post"><button>Run C++</button></form></li>
+                <li><form action="/execute/java" method="post"><button>Run Java</button></form></li>
+                <li><form action="/execute/all" method="post"><button>Run All</button></form></li>
             </ul>
         </body>
     </html>
@@ -212,6 +244,34 @@ def all_stats():
         "shapes": shape_system.get_shape_stats(shapes),
         "animals": animal_system.get_animal_stats(animals)
     })
+
+# Execute native language programs
+@app.route('/execute/cobol', methods=['POST'])
+def run_cobol():
+    result = execute_cobol_program()
+    return jsonify(result)
+
+@app.route('/execute/cpp', methods=['POST'])
+def run_cpp():
+    result = execute_cpp_program()
+    return jsonify(result)
+
+@app.route('/execute/java', methods=['POST'])
+def run_java():
+    result = execute_java_program()
+    return jsonify(result)
+
+@app.route('/execute/all', methods=['POST'])
+def run_all_languages():
+    return jsonify({
+        "cobol": execute_cobol_program(),
+        "cpp": execute_cpp_program(),
+        "java": execute_java_program()
+    })
+
+@app.route('/health')
+def health_check():
+    return jsonify({"status": "healthy", "timestamp": str(subprocess.check_output(['date']).decode())})
 
 # VULNERABILITY: No rate limiting, no CSRF protection
 if __name__ == '__main__':

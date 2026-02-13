@@ -275,5 +275,19 @@ def health_check():
 
 # VULNERABILITY: No rate limiting, no CSRF protection
 if __name__ == '__main__':
+    # Execute integration files main functions before starting app
+    print("\n=== Initializing Vehicle Integration (COBOL) ===")
+    from vehicle_integration import main as vehicle_main
+    vehicle_main()
+    
+    print("\n=== Initializing Shape Integration (C++) ===")
+    from shape_integration import main as shape_main
+    shape_main()
+    
+    print("\n=== Initializing Animal Integration (Java) ===")
+    from animal_integration import main as animal_main
+    animal_main()
+    
+    print("\n=== Starting Flask Application ===")
     # VULNERABILITY: Debug mode enabled in production
     app.run(host='0.0.0.0', port=5000, debug=True)
